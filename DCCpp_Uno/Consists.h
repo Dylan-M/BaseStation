@@ -13,14 +13,15 @@ Addition to DCC++ BASE STATION for the Arduino
 #ifndef Consists_h
 #define Consists_h
 
-#define POS_LEAD_LOCO  0
-#define POS_TRAIL_LOCO 1
-#define POS_OTHER_LOCO 2
+#define POS_LEAD_LOCO       0
+#define POS_TRAIL_LOCO      1
+#define POS_OTHER_LOCO      2
+#define MAX_CONSIST_ADDRESS 127
 
 struct ConsistData {
   byte address;
-  int leadLoco;
-  int trailLoco;
+  int leadLoco = -1;
+  int trailLoco = -1;
   // All other locos in the consist, allows for MAX_CONSIST_SIZE+2 (the lead and trail won't be in the array)
   int locos[MAX_CONSIST_SIZE] = { -1 };
 };
@@ -30,10 +31,11 @@ struct Consist {
   int num;
   struct ConsistData data;
   Consist *nextConsist;
+  static boolean isInConsist(int);
   static void parse(char *c);
   static Consist* get(int);
-  static void add(int, byte);
-  static void remove(int, int);
+  static boolean add(int, int, byte);
+  static boolean remove(int, int);
   static void clear(int);
   static void load();
   static void store();

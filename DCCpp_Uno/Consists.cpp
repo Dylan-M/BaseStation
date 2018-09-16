@@ -86,12 +86,12 @@ void Consist::load() {
 void Consist::show(int n) {
   Consist *consist;
 
-  if(firstConsist==NULL){
+  if(firstConsist == NULL){
     INTERFACE.print("<X>");
     return;
   }
     
-  for(consist=firstConsist; consist != NULL; consist = consist->nextConsist) {
+  for(consist = firstConsist; consist != NULL; consist = consist->nextConsist) {
     INTERFACE.print("<H");
     INTERFACE.print(consist->data.address);
     if(n == 1){
@@ -100,18 +100,37 @@ void Consist::show(int n) {
       INTERFACE.print(" Trail: ");
       INTERFACE.print(consist->data.trailLoco);
     }
-    if(consist->data.locos[0] != -1) {
-      INTERFACE.print(" Others: ");
-      for (int i = 0; i < MAX_CONSIST_SIZE; i++) {
-        if(consist->data.locos[0] != -1) {
-          if (i > 0) {
-            INTERFACE.print(",");
-          }
-          INTERFACE.print(" ");
+
+    boolean other = false;
+    for (int i = 0; i < MAX_CONSIST_SIZE; i++) {
+      if(consist->data.locos[i] != -1) {
+        if (other) {
+          INTERFACE.print(", ");
+        } else {
+          INTERFACE.print(" Others: ");
+          other = true;
         }
+        INTERFACE.print(consist->data.locos[i]);
       }
     }
   }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+boolean Consist::isInConsist(int loco) {
+  Consist *consist;
+  for(consist = firstConsist; consist != NULL; consist = consist->nextConsist) {
+    if (consist->data.leadLoco == loco || consist->data.trailLoco == loco) {
+      return true;
+    }
+    for (int i = 0; i < MAX_CONSIST_SIZE; i++) {
+      if (consist->data.locos[i] == loco) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -124,20 +143,21 @@ Consist* Consist::get(int n) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Consist::clear(int n){
+void Consist::clear(int n) {
   Consist *consist,*pp;
   
-  for(consist = firstConsist; consist != NULL && consist->data.address!=n;pp=consist,consist=consist->nextConsist);
+  for(consist = firstConsist; consist != NULL && consist->data.address != n; pp = consist, consist=consist->nextConsist);
 
-  if(consist == NULL){
+  if(consist == NULL) {
     INTERFACE.print("<X>");
     return;
   }
   
-  if(consist == firstConsist)
+  if(consist == firstConsist) {
     firstConsist = consist->nextConsist;
-  else
+  } else {
     pp->nextConsist = consist->nextConsist;
+  }
 
   free(consist);
 
@@ -146,7 +166,59 @@ void Consist::clear(int n){
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Consist::add(int n, byte pos = POS_OTHER_LOCO) {
+boolean Consist::add(int n, int loco, byte pos = POS_OTHER_LOCO) {
+  Consist *consist, *pp;
+  boolean assigned = false;
+
+  for(consist = firstConsist; consist != NULL && consist->data.address != n; pp = consist, consist=consist->nextConsist);
+
+  if(consist == NULL || isInConsist(loco)) {
+    INTERFACE.print("<X>");
+    return assigned;
+  }
+
+  if (pos == POS_LEAD_LOCO) {
+    if (consist->data.leadLoco != -1) {
+      int tmpLoco = consist->data.leadLoco;
+      if (!add(n, tmpLoco, POS_OTHER_LOCO)) {
+        INTERFACE.print("<X>");
+        return assigned;
+      }
+    }
+    consist->data.leadLoco = loco;
+    assigned = true;
+  } else if (pos == POS_LEAD_LOCO) {
+    if (consist->data.trailLoco != -1) {
+      int tmpLoco = consist->data.trailLoco;
+      if (!add(n, tmpLoco, POS_OTHER_LOCO)) {
+        INTERFACE.print("<X>");
+        return assigned;
+      };
+    }
+    consist->data.leadLoco = loco;
+    assigned = true;
+  } else {
+    for (int i = 0; i < MAX_CONSIST_SIZE; i++) {
+      if(consist->data.locos[i] == -1) {
+        consist->data.locos[i] = loco;
+        assigned = true;
+        break;
+      }
+    }
+  }
+
+  if(assigned) {
+    INTERFACE.print("<O>");
+  } else {
+    INTERFACE.print("<X>");
+  }
+
+  return assigned;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+boolean Consist::remove(int n, int loco) {
 //  Consist *consist, *pp;
 //  
 //  for(consist=firstConsist;consist!=NULL && consist->data.id!=n;pp=consist,consist=consist->nextConsist);
@@ -164,33 +236,12 @@ void Consist::add(int n, byte pos = POS_OTHER_LOCO) {
 //  free(consist);
 //
 //  INTERFACE.print("<O>");
+  return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Consist::remove(int n, int locoNumber) {
-//  Consist *consist, *pp;
-//  
-//  for(consist=firstConsist;consist!=NULL && consist->data.id!=n;pp=consist,consist=consist->nextConsist);
-//
-//  if(consist==NULL){
-//    INTERFACE.print("<X>");
-//    return;
-//  }
-//  
-//  if(consist==firstConsist)
-//    firstConsist=consist->nextConsist;
-//  else
-//    pp->nextConsist=consist->nextConsist;
-//
-//  free(consist);
-//
-//  INTERFACE.print("<O>");
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-void Consist::parse(char *c){
+void Consist::parse(char *c) {
 //  int n,s,m;
 //  Consist *consist;
 //  

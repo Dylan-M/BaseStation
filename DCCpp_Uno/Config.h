@@ -64,5 +64,7 @@ Part of DCC++ BASE STATION for the Arduino
                             // seen was 17 locomotives. If your specific implement
                             // -ation needs more, feel free to adjust this value.
                             // -- Dylan
+                            // (PS. This allows 22 total, 20 "normal" plus lead
+                            // and trail.)
 
 /////////////////////////////////////////////////////////////////////////////////////
