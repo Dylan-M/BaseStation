@@ -43,7 +43,7 @@ Consist *Consist::create(byte address, int leadLoco, int trailLoco, int locos[MA
   consist->data.address = address;
   consist->data.leadLoco = leadLoco;
   consist->data.trailLoco = trailLoco;
-  consist->data.locos = locos;
+  memcpy(consist->data.locos, locos, sizeof(consist->data.locos));
   if(v == 1) {
     INTERFACE.print("<O>");
   }
