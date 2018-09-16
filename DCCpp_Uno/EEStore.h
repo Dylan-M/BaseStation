@@ -17,6 +17,7 @@ struct EEStoreData{
   int nTurnouts;
   int nSensors;  
   int nOutputs;
+  int nConsists;
 };
 
 struct EEStore{
@@ -32,4 +33,3 @@ struct EEStore{
 };
   
 #endif
-

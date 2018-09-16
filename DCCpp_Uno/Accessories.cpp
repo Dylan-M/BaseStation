@@ -235,5 +235,3 @@ Turnout *Turnout::create(int id, int add, int subAdd, int v){
 ///////////////////////////////////////////////////////////////////////////////
 
 Turnout *Turnout::firstTurnout=NULL;
-
-

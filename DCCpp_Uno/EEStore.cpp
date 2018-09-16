@@ -12,6 +12,7 @@ Part of DCC++ BASE STATION for the Arduino
 #include "Accessories.h"
 #include "Sensor.h"
 #include "Outputs.h"
+#include "Consists.h"
 #include <EEPROM.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -24,10 +25,11 @@ void EEStore::init(){
   EEPROM.get(0,eeStore->data);                                       // get eeStore data 
   
   if(strncmp(eeStore->data.id,EESTORE_ID,sizeof(EESTORE_ID))!=0){    // check to see that eeStore contains valid DCC++ ID
-    sprintf(eeStore->data.id,EESTORE_ID);                           // if not, create blank eeStore structure (no turnouts, no sensors) and save it back to EEPROM
+    sprintf(eeStore->data.id,EESTORE_ID);                            // if not, create blank eeStore structure (no turnouts, no sensors, no outputs) and save it back to EEPROM
     eeStore->data.nTurnouts=0;
     eeStore->data.nSensors=0;
     eeStore->data.nOutputs=0;
+    eeStore->data.nConsists=0;
     EEPROM.put(0,eeStore->data);    
   }
   
@@ -35,6 +37,7 @@ void EEStore::init(){
   Turnout::load();    // load turnout definitions
   Sensor::load();     // load sensor definitions
   Output::load();     // load output definitions
+  Consist::load();   // load consist definitions
   
 }
 
@@ -42,10 +45,11 @@ void EEStore::init(){
 
 void EEStore::clear(){
     
-  sprintf(eeStore->data.id,EESTORE_ID);                           // create blank eeStore structure (no turnouts, no sensors) and save it back to EEPROM
+  sprintf(eeStore->data.id,EESTORE_ID);                              // create blank eeStore structure (no turnouts, no sensors, no outputs) and save it back to EEPROM
   eeStore->data.nTurnouts=0;
   eeStore->data.nSensors=0;
   eeStore->data.nOutputs=0;
+  eeStore->data.nConsists=0;
   EEPROM.put(0,eeStore->data);    
   
 }
@@ -55,8 +59,9 @@ void EEStore::clear(){
 void EEStore::store(){
   reset();
   Turnout::store();
-  Sensor::store();  
-  Output::store();  
+  Sensor::store();
+  Output::store();
+  Consist::store();
   EEPROM.put(0,eeStore->data);    
 }
 
@@ -80,4 +85,3 @@ int EEStore::pointer(){
 
 EEStore *EEStore::eeStore=NULL;
 int EEStore::eeAddress=0;
-
