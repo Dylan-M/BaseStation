@@ -22,9 +22,12 @@ Addition to DCC++ BASE STATION for the Arduino
 struct ConsistData {
   byte address;
   int leadLoco = -1;
+  boolean leadDir; // True for forward, false for reverse
   int trailLoco = -1;
+  boolean trailDir; // True for forward, false for reverse
   // All other locos in the consist, allows for MAX_CONSIST_SIZE+2 (the lead and trail won't be in the array)
   int locos[MAX_CONSIST_SIZE] = { -1 };
+  boolean locosDir[MAX_CONSIST_SIZE]; // True for forward, false for reverse
 };
 
 struct Consist {
