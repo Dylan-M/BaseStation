@@ -309,6 +309,9 @@ boolean Consist::remove(byte addr, int loco) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+// TODO: This currently has no way to send a locomotive address, and retrieve
+// it's consist address. Doh. Maybe that should just be pulled from the loco
+// via a CV read
 void Consist::parse(char *c) {
   int n,s,m, l;
   int locos[MAX_CONSIST_SIZE] = { -1 };
@@ -328,7 +331,7 @@ void Consist::parse(char *c) {
     case 2:                     // argument is string with consist address and locomotive to remove
       remove(n, s);
       break;
-    case 1:                     // argument is a string with id number only
+    case 1:                     // argument is a string with consist address only
       clear(n);
       break;
     case -1:                    // no arguments
