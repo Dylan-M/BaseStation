@@ -72,12 +72,12 @@ Consist *Consist::create(byte address, int leadLoco, int trailLoco, int locos[MA
   Consist *consist;
 
   // Validate that none of our requested engines are present in a consist
-  if (isInConsist(abs(leadLoco)) != CONSIST_NONE || isInConsist(abs(trailLoco)) != CONSIST_NONE) {
+  if (isInConsist(leadLoco) != CONSIST_NONE || isInConsist(trailLoco) != CONSIST_NONE) {
     INTERFACE.print("<X>");
     return (consist);
   }
   for (int i = 0; i < MAX_CONSIST_SIZE; i++) {
-    if (isInConsist(abs(locos[i])) != CONSIST_NONE) {
+    if (isInConsist(locos[i]) != CONSIST_NONE) {
       INTERFACE.print("<X>");
       return (consist);
     }
@@ -101,13 +101,10 @@ Consist *Consist::create(byte address, int leadLoco, int trailLoco, int locos[MA
   }
   
   consist->data.address = address;
-  consist->data.leadLoco = abs(leadLoco);
-  consist->data.leadDir = (abs(leadLoco) == leadLoco);
-  consist->data.trailLoco = abs(trailLoco);
-  consist->data.leadDir = (abs(trailLoco) == trailLoco);
+  consist->data.leadLoco = leadLoco;
+  consist->data.trailLoco = trailLoco;
   for (int i = 0; i < MAX_CONSIST_SIZE; i++) {
-    consist->data.locos[i] = abs(locos[i]);
-    consist->data.locosDir[i] = (abs(locos[i]) == locos[i]);
+    consist->data.locos[i] = locos[i];
   }
   INTERFACE.print("<O>");
   return (consist);
@@ -155,25 +152,19 @@ void Consist::show(int n) {
   }
     
   for(consist = firstConsist; consist != NULL; consist = consist->nextConsist) {
-    INTERFACE.print("<H");
+    INTERFACE.print("<U");
     INTERFACE.print(consist->data.address);
-    if(n == 1){
-      INTERFACE.print(" Lead: ");
+    if(n == 1) {
+      INTERFACE.print(" ");
       INTERFACE.print(consist->data.leadLoco);
-      INTERFACE.print(" Trail: ");
+      INTERFACE.print(" ");
       INTERFACE.print(consist->data.trailLoco);
-    }
 
-    boolean other = false;
-    for (int i = 0; i < MAX_CONSIST_SIZE; i++) {
-      if(consist->data.locos[i] != CONSIST_NONE) {
-        if (other) {
-          INTERFACE.print(", ");
-        } else {
-          INTERFACE.print(" Others: ");
-          other = true;
+      for (int i = 0; i < MAX_CONSIST_SIZE; i++) {
+        if(consist->data.locos[i] != CONSIST_NONE) {
+          INTERFACE.print(" ");
+          INTERFACE.print(consist->data.locos[i]);
         }
-        INTERFACE.print(consist->data.locos[i]);
       }
     }
   }
@@ -230,20 +221,15 @@ void Consist::clear(int n) {
 ///////////////////////////////////////////////////////////////////////////////
 
 //  consist->data.address = address;
-//  consist->data.leadLoco = abs(leadLoco);
-//  consist->data.leadDir = (abs(leadLoco) == leadLoco);
-//  consist->data.trailLoco = abs(trailLoco);
-//  consist->data.leadDir = (abs(trailLoco) == trailLoco);
+//  consist->data.leadLoco = leadLoco;
+//  consist->data.trailLoco = trailLoco;
 //  for (int i = 0; i < MAX_CONSIST_SIZE; i++) {
-//    consist->data.locos[i] = abs(locos[i]);
-//    consist->data.locosDir[i] = (abs(locos[i]) == locos[i]);
+//    consist->data.locos[i] = locos[i];
 //  }
 
 boolean Consist::add(int addr, int loco, byte pos = POS_OTHER_LOCO) {
   Consist *consist, *pp;
   boolean assigned = false;
-  boolean dir = (abs(loco) == loco);
-  loco = abs(loco);
 
   for (consist = firstConsist; consist != NULL && consist->data.address != addr; pp = consist, consist = consist->nextConsist);
 
@@ -255,36 +241,27 @@ boolean Consist::add(int addr, int loco, byte pos = POS_OTHER_LOCO) {
   if (pos == POS_LEAD_LOCO) {
     if (consist->data.leadLoco != CONSIST_NONE) {
       int tmpLoco = consist->data.leadLoco;
-      if (!consist->data.leadDir) {
-        tmpLoco *= -1;
-      }
       if (!add(addr, tmpLoco, POS_OTHER_LOCO)) {
         INTERFACE.print("<X>");
         return assigned;
       }
     }
     consist->data.leadLoco = loco;
-    consist->data.leadDir = dir;
     assigned = true;
   } else if (pos == POS_LEAD_LOCO) {
     if (consist->data.trailLoco != CONSIST_NONE) {
       int tmpLoco = consist->data.trailLoco;
-      if (!consist->data.trailDir) {
-        tmpLoco *= -1;
-      }
       if (!add(addr, tmpLoco, POS_OTHER_LOCO)) {
         INTERFACE.print("<X>");
         return assigned;
       };
     }
     consist->data.trailLoco = loco;
-    consist->data.trailDir = dir;
     assigned = true;
   } else {
     for (int i = 0; i < MAX_CONSIST_SIZE; i++) {
       if(consist->data.locos[i] == CONSIST_NONE) {
         consist->data.locos[i] = loco;
-        consist->data.locosDir[i] = dir;
         assigned = true;
         break;
       }

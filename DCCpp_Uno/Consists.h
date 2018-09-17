@@ -17,17 +17,14 @@ Addition to DCC++ BASE STATION for the Arduino
 #define POS_TRAIL_LOCO      1
 #define POS_OTHER_LOCO      2
 #define MAX_CONSIST_ADDRESS 127
-#define CONSIST_NONE        -1
+#define CONSIST_NONE        0
 
 struct ConsistData {
   byte address;
-  int leadLoco = -1;
-  boolean leadDir; // True for forward, false for reverse
-  int trailLoco = -1;
-  boolean trailDir; // True for forward, false for reverse
+  int leadLoco = CONSIST_NONE;
+  int trailLoco = CONSIST_NONE;
   // All other locos in the consist, allows for MAX_CONSIST_SIZE+2 (the lead and trail won't be in the array)
-  int locos[MAX_CONSIST_SIZE] = { -1 };
-  boolean locosDir[MAX_CONSIST_SIZE]; // True for forward, false for reverse
+  int locos[MAX_CONSIST_SIZE] = { CONSIST_NONE };
 };
 
 struct Consist {
