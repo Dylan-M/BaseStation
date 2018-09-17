@@ -40,7 +40,7 @@ struct Consist {
   static void clear(int);
   static void load();
   static void store();
-  static Consist *create(byte, int, int, int[], int = 0);
+  static Consist *create(byte, int, int, int[]);
   static void show(int=0);
 }; // Consist
   

@@ -66,8 +66,20 @@ Where:
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Consist *Consist::create(byte address, int leadLoco, int trailLoco, int locos[MAX_CONSIST_SIZE], int v) {
+Consist *Consist::create(byte address, int leadLoco, int trailLoco, int locos[MAX_CONSIST_SIZE]) {
   Consist *consist;
+
+  // Validate that none of our requested engines are present in a consist
+  if (isInConsist(leadLoco) != CONSIST_NONE || isInConsist(trailLoco) != CONSIST_NONE) {
+    INTERFACE.print("<X>");
+    return (consist);
+  }
+  for (int i = 0; i < MAX_CONSIST_SIZE; i++) {
+    if (isInConsist(locos[i]) != CONSIST_NONE) {
+      INTERFACE.print("<X>");
+      return (consist);
+    }
+  }
   
   if (firstConsist == NULL) {
     firstConsist = (Consist *)calloc(1,sizeof(Consist));
@@ -82,9 +94,7 @@ Consist *Consist::create(byte address, int leadLoco, int trailLoco, int locos[MA
   }
 
   if(consist == NULL) {       // problem allocating memory
-    if (v == 1) {
-      INTERFACE.print("<X>");
-    }
+    INTERFACE.print("<X>");
     return (consist);
   }
   
@@ -92,9 +102,7 @@ Consist *Consist::create(byte address, int leadLoco, int trailLoco, int locos[MA
   consist->data.leadLoco = leadLoco;
   consist->data.trailLoco = trailLoco;
   memcpy (consist->data.locos, locos, sizeof(consist->data.locos));
-  if(v == 1) {
-    INTERFACE.print("<O>");
-  }
+  INTERFACE.print("<O>");
   return (consist);
 }
 
@@ -309,33 +317,45 @@ boolean Consist::remove(byte addr, int loco) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// TODO: This currently has no way to send a locomotive address, and retrieve
-// it's consist address. Doh. Maybe that should just be pulled from the loco
-// via a CV read
 void Consist::parse(char *c) {
   int n,s,m, l;
   int locos[MAX_CONSIST_SIZE] = { -1 };
   Consist *consist;
   
   switch (sscanf(c,"%d %d %d",&n,&s,&m)) {
-    case 3:                     // argument is string with consist address, lead, and trail
+    case 3: // argument is string with consist address, lead, trail, and maybe others
       {
         int i = 0;
+        // Add any additional locomotives we may have
         while (sscanf(c, "%d", &l) > 0) {
           locos[i] = l;
           i++;
         }
-        create(n,s,m,locos,1);
+        // Create the new consist with all the locomotives requested.
+        create(n,s,m,locos);
       }
       break;
-    case 2:                     // argument is string with consist address and locomotive to remove
-      remove(n, s);
+    case 2:
+      {
+        // arguments are requesting feedback requesting which consist engine 's' is in
+        if (n == CONSIST_NONE) {
+          int consist = isInConsist(s);
+          INTERFACE.print("<V ");   // Send feedback packet <V CONSIST LOCO>
+          INTERFACE.print(consist);
+          INTERFACE.print(" ");
+          INTERFACE.print(s);
+          INTERFACE.print(">");
+        } else { // argument is string with consist address and locomotive to remove
+          remove(n, s);
+        }
+      }
       break;
-    case 1:                     // argument is a string with consist address only
+    case 1:
+      // argument is a string with consist address only, we clear that consist
       clear(n);
       break;
-    case -1:                    // no arguments
-      show(1);                  // verbose show
+    case -1:   // no arguments
+      show(1); // verbose show
       break;
   }
 }
