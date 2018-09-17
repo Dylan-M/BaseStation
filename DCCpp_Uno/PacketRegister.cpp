@@ -10,6 +10,7 @@ Part of DCC++ BASE STATION for the Arduino
 #include "DCCpp_Uno.h"
 #include "PacketRegister.h"
 #include "Comm.h"
+#include "Consists.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -43,9 +44,9 @@ RegisterList::RegisterList(int maxNumRegs){
 
 void RegisterList::loadPacket(int nReg, byte *b, int nBytes, int nRepeat, int printFlag) volatile {
   
-  nReg=nReg%((maxNumRegs+1));          // force nReg to be between 0 and maxNumRegs, inclusive
+  nReg=nReg%((maxNumRegs+1));         // force nReg to be between 0 and maxNumRegs, inclusive
 
-  while(nextReg!=NULL);              // pause while there is a Register already waiting to be updated -- nextReg will be reset to NULL by interrupt when prior Register updated fully processed
+  while(nextReg!=NULL);               // pause while there is a Register already waiting to be updated -- nextReg will be reset to NULL by interrupt when prior Register updated fully processed
  
   if(regMap[nReg]==NULL)              // first time this Register Number has been called
    regMap[nReg]=maxLoadedReg+1;       // set Register Pointer for this Register Number to next available Register
@@ -54,10 +55,10 @@ void RegisterList::loadPacket(int nReg, byte *b, int nBytes, int nRepeat, int pr
   Packet *p=r->updatePacket;          // set Packet in the Register to be updated
   byte *buf=p->buf;                   // set byte buffer in the Packet to be updated
           
-  b[nBytes]=b[0];                        // copy first byte into what will become the checksum byte  
-  for(int i=1;i<nBytes;i++)              // XOR remaining bytes into checksum byte
+  b[nBytes]=b[0];                     // copy first byte into what will become the checksum byte
+  for(int i=1;i<nBytes;i++)           // XOR remaining bytes into checksum byte
     b[nBytes]^=b[i];
-  nBytes++;                              // increment number of bytes in packet to include checksum byte
+  nBytes++;                           // increment number of bytes in packet to include checksum byte
       
   buf[0]=0xFF;                        // first 8 bytes of 22-byte preamble
   buf[1]=0xFF;                        // second 8 bytes of 22-byte preamble
@@ -99,39 +100,57 @@ void RegisterList::loadPacket(int nReg, byte *b, int nBytes, int nRepeat, int pr
 ///////////////////////////////////////////////////////////////////////////////
 
 void RegisterList::setThrottle(char *s) volatile{
-  byte b[5];                      // save space for checksum byte
+  byte b[5];                          // save space for checksum byte
   int nReg;
   int cab;
   int tSpeed;
   int tDirection;
   byte nB=0;
+  Consist *consist;
+  boolean lead;
   
   if(sscanf(s,"%d %d %d %d",&nReg,&cab,&tSpeed,&tDirection)!=4)
     return;
 
   if(nReg<1 || nReg>maxNumRegs)
-    return;  
+    return;
 
-  if(cab>127)
-    b[nB++]=highByte(cab) | 0xC0;      // convert train number into a two-byte address
-    
-  b[nB++]=lowByte(cab);
-  b[nB++]=0x3F;                        // 128-step speed control byte
-  if(tSpeed>=0) 
-    b[nB++]=tSpeed+(tSpeed>0)+tDirection*128;   // max speed is 126, but speed codes range from 2-127 (0=stop, 1=emergency stop)
-  else{
-    b[nB++]=1;
-    tSpeed=0;
+  // Handle consists properly
+  consist = Consist::get(Consist::isInConsist(cab));
+  if (consist != NULL) {
+    if (consist->data.leadLoco == cab) {
+      lead = true; // Leader, apply speed in specified direction
+    } else if (consist->data.trailLoco == cab) {
+      lead = false; // Trail, apply speed in opposite of specified direction
+    } else { // Not the leader or the trail, so this isn't a valid request
+      return;
+    }
+
+    // TODO: Need to finish this before it'll work, but it would require some kind of hacking of the registers
+    // Perhaps only store the dialed up locomotive in a register, and then have a timer in the code push
+    // calls to this function with register 0 so that the whole consist gets done...
+  } else {
+    if(cab>127)
+      b[nB++]=highByte(cab) | 0xC0;     // convert train number into a two-byte address
+
+    b[nB++]=lowByte(cab);
+    b[nB++]=0x3F;                       // 128-step speed control byte
+    if(tSpeed>=0)
+      b[nB++]=tSpeed+(tSpeed>0)+tDirection*128;   // max speed is 126, but speed codes range from 2-127 (0=stop, -1=emergency stop)
+    else{
+      b[nB++]=1;
+      tSpeed=0;
+    }
+
+    loadPacket(nReg,b,nB,0,1);
   }
-       
-  loadPacket(nReg,b,nB,0,1);
   
   INTERFACE.print("<T");
   INTERFACE.print(nReg); INTERFACE.print(" ");
   INTERFACE.print(tSpeed); INTERFACE.print(" ");
   INTERFACE.print(tDirection);
   INTERFACE.print(">");
-  
+
   speedTable[nReg]=tDirection==1?tSpeed:-tSpeed;
     
 } // RegisterList::setThrottle()
@@ -139,7 +158,7 @@ void RegisterList::setThrottle(char *s) volatile{
 ///////////////////////////////////////////////////////////////////////////////
 
 void RegisterList::setFunction(char *s) volatile{
-  byte b[5];                      // save space for checksum byte
+  byte b[5];                          // save space for checksum byte
   int cab;
   int fByte, eByte;
   int nParams;
@@ -151,14 +170,14 @@ void RegisterList::setFunction(char *s) volatile{
     return;
 
   if(cab>127)
-    b[nB++]=highByte(cab) | 0xC0;      // convert train number into a two-byte address
+    b[nB++]=highByte(cab) | 0xC0;     // convert train number into a two-byte address
     
   b[nB++]=lowByte(cab);
 
-  if(nParams==2){                      // this is a request for functions FL,F1-F12  
-    b[nB++]=(fByte | 0x80) & 0xBF;     // for safety this guarantees that first nibble of function byte will always be of binary form 10XX which should always be the case for FL,F1-F12  
-  } else {                             // this is a request for functions F13-F28
-    b[nB++]=(fByte | 0xDE) & 0xDF;     // for safety this guarantees that first byte will either be 0xDE (for F13-F20) or 0xDF (for F21-F28)
+  if(nParams==2){                     // this is a request for functions FL,F1-F12
+    b[nB++]=(fByte | 0x80) & 0xBF;    // for safety this guarantees that first nibble of function byte will always be of binary form 10XX which should always be the case for FL,F1-F12
+  } else {                            // this is a request for functions F13-F28
+    b[nB++]=(fByte | 0xDE) & 0xDF;    // for safety this guarantees that first byte will either be 0xDE (for F13-F20) or 0xDF (for F21-F28)
     b[nB++]=eByte;
   }
     
@@ -169,16 +188,16 @@ void RegisterList::setFunction(char *s) volatile{
 ///////////////////////////////////////////////////////////////////////////////
 
 void RegisterList::setAccessory(char *s) volatile{
-  byte b[3];                      // save space for checksum byte
-  int aAdd;                       // the accessory address (0-511 = 9 bits) 
-  int aNum;                       // the accessory number within that address (0-3)
-  int activate;                   // flag indicated whether accessory should be activated (1) or deactivated (0) following NMRA recommended convention
+  byte b[3];                          // save space for checksum byte
+  int aAdd;                           // the accessory address (0-511 = 9 bits)
+  int aNum;                           // the accessory number within that address (0-3)
+  int activate;                       // flag indicated whether accessory should be activated (1) or deactivated (0) following NMRA recommended convention
   
   if(sscanf(s,"%d %d %d",&aAdd,&aNum,&activate)!=3)
     return;
     
-  b[0]=aAdd%64+128;                                           // first byte is of the form 10AAAAAA, where AAAAAA represent 6 least signifcant bits of accessory address  
-  b[1]=((((aAdd/64)%8)<<4) + (aNum%4<<1) + activate%2) ^ 0xF8;      // second byte is of the form 1AAACDDD, where C should be 1, and the least significant D represent activate/deactivate
+  b[0]=aAdd%64+128;                                             // first byte is of the form 10AAAAAA, where AAAAAA represent 6 least signifcant bits of accessory address
+  b[1]=((((aAdd/64)%8)<<4) + (aNum%4<<1) + activate%2) ^ 0xF8;  // second byte is of the form 1AAACDDD, where C should be 1, and the least significant D represent activate/deactivate
       
   loadPacket(0,b,2,4,1);
       
@@ -216,7 +235,7 @@ void RegisterList::readCV(char *s) volatile{
     return;    
   cv--;                              // actual CV addresses are cv-1 (0-1023)
   
-  bRead[0]=0x78+(highByte(cv)&0x03);   // any CV>1023 will become modulus(1024) due to bit-mask of 0x03
+  bRead[0]=0x78+(highByte(cv)&0x03); // any CV>1023 will become modulus(1024) due to bit-mask of 0x03
   bRead[1]=lowByte(cv);
   
   bValue=0;
@@ -254,7 +273,7 @@ void RegisterList::readCV(char *s) volatile{
     base+=analogRead(CURRENT_MONITOR_PIN_PROG);
   base/=ACK_BASE_COUNT;
   
-  bRead[0]=0x74+(highByte(cv)&0x03);   // set-up to re-verify entire byte
+  bRead[0]=0x74+(highByte(cv)&0x03);      // set-up to re-verify entire byte
   bRead[2]=bValue;  
 
   loadPacket(0,resetPacket,2,3);          // NMRA recommends starting with 3 reset packets
@@ -292,7 +311,7 @@ void RegisterList::writeCVByte(char *s) volatile{
 
   if(sscanf(s,"%d %d %d %d",&cv,&bValue,&callBack,&callBackSub)!=4)          // cv = 1-1024
     return;    
-  cv--;                              // actual CV addresses are cv-1 (0-1023)
+  cv--;                                 // actual CV addresses are cv-1 (0-1023)
   
   bWrite[0]=0x7C+(highByte(cv)&0x03);   // any CV>1023 will become modulus(1024) due to bit-mask of 0x03
   bWrite[1]=lowByte(cv);
@@ -311,7 +330,7 @@ void RegisterList::writeCVByte(char *s) volatile{
     base+=analogRead(CURRENT_MONITOR_PIN_PROG);
   base/=ACK_BASE_COUNT;
   
-  bWrite[0]=0x74+(highByte(cv)&0x03);   // set-up to re-verify entire byte
+  bWrite[0]=0x74+(highByte(cv)&0x03);     // set-up to re-verify entire byte
 
   loadPacket(0,resetPacket,2,3);          // NMRA recommends starting with 3 reset packets
   loadPacket(0,bWrite,3,5);               // NMRA recommends 5 verfy packets
@@ -348,7 +367,7 @@ void RegisterList::writeCVBit(char *s) volatile{
 
   if(sscanf(s,"%d %d %d %d %d",&cv,&bNum,&bValue,&callBack,&callBackSub)!=5)          // cv = 1-1024
     return;    
-  cv--;                              // actual CV addresses are cv-1 (0-1023)
+  cv--;                                 // actual CV addresses are cv-1 (0-1023)
   bValue=bValue%2;
   bNum=bNum%8;
   
@@ -369,7 +388,7 @@ void RegisterList::writeCVBit(char *s) volatile{
     base+=analogRead(CURRENT_MONITOR_PIN_PROG);
   base/=ACK_BASE_COUNT;
   
-  bitClear(bWrite[2],4);              // change instruction code from Write Bit to Verify Bit
+  bitClear(bWrite[2],4);                  // change instruction code from Write Bit to Verify Bit
 
   loadPacket(0,resetPacket,2,3);          // NMRA recommends starting with 3 reset packets
   loadPacket(0,bWrite,3,5);               // NMRA recommends 5 verfy packets
@@ -401,7 +420,7 @@ void RegisterList::writeCVBit(char *s) volatile{
 ///////////////////////////////////////////////////////////////////////////////
 
 void RegisterList::writeCVByteMain(char *s) volatile{
-  byte b[6];                      // save space for checksum byte
+  byte b[6];                          // save space for checksum byte
   int cab;
   int cv;
   int bValue;
@@ -412,7 +431,7 @@ void RegisterList::writeCVByteMain(char *s) volatile{
   cv--;
 
   if(cab>127)    
-    b[nB++]=highByte(cab) | 0xC0;      // convert train number into a two-byte address
+    b[nB++]=highByte(cab) | 0xC0;     // convert train number into a two-byte address
     
   b[nB++]=lowByte(cab);
   b[nB++]=0xEC+(highByte(cv)&0x03);   // any CV>1023 will become modulus(1024) due to bit-mask of 0x03
@@ -426,7 +445,7 @@ void RegisterList::writeCVByteMain(char *s) volatile{
 ///////////////////////////////////////////////////////////////////////////////
 
 void RegisterList::writeCVBitMain(char *s) volatile{
-  byte b[6];                      // save space for checksum byte
+  byte b[6];                          // save space for checksum byte
   int cab;
   int cv;
   int bNum;
@@ -441,7 +460,7 @@ void RegisterList::writeCVBitMain(char *s) volatile{
   bNum=bNum%8; 
 
   if(cab>127)    
-    b[nB++]=highByte(cab) | 0xC0;      // convert train number into a two-byte address
+    b[nB++]=highByte(cab) | 0xC0;     // convert train number into a two-byte address
   
   b[nB++]=lowByte(cab);
   b[nB++]=0xE8+(highByte(cv)&0x03);   // any CV>1023 will become modulus(1024) due to bit-mask of 0x03
