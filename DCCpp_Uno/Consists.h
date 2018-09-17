@@ -17,6 +17,7 @@ Addition to DCC++ BASE STATION for the Arduino
 #define POS_TRAIL_LOCO      1
 #define POS_OTHER_LOCO      2
 #define MAX_CONSIST_ADDRESS 127
+#define CONSIST_NONE        -1
 
 struct ConsistData {
   byte address;
@@ -31,11 +32,11 @@ struct Consist {
   int num;
   struct ConsistData data;
   Consist *nextConsist;
-  static boolean isInConsist(int);
+  static int isInConsist(int);
   static void parse(char *c);
   static Consist* get(int);
   static boolean add(int, int, byte);
-  static boolean remove(int, int);
+  static boolean remove(byte, int);
   static void clear(int);
   static void load();
   static void store();
