@@ -129,6 +129,9 @@ void RegisterList::setThrottle(char *s) volatile{
     // TODO: Need to finish this before it'll work, but it would require some kind of hacking of the registers
     // Perhaps only store the dialed up locomotive in a register, and then have a timer in the code push
     // calls to this function with register 0 so that the whole consist gets done...
+
+    // TODO: Add "headlight" swapping when direction changes by checking if CV29 bit 1 is on. If it is, other
+    // end needs CV29 bit 2 toggled on, and this end needs it toggled off
   } else {
     if(cab>127)
       b[nB++]=highByte(cab) | 0xC0;     // convert train number into a two-byte address
