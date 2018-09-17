@@ -202,7 +202,7 @@ CurrentMonitor progMonitor(CURRENT_MONITOR_PIN_PROG,"<p3>");  // create monitor 
 
 void loop(){
   
-  SerialCommand::process();              // check for, and process, and new serial commands
+  SerialCommand::process();              // check for, and process, any new serial commands
   
   if(CurrentMonitor::checkTime()){      // if sufficient time has elapsed since last update, check current draw on Main and Program Tracks 
     mainMonitor.check();
@@ -227,14 +227,14 @@ void setup(){
     digitalWrite(SDCARD_CS,HIGH);     // Deselect the SD card
   #endif
 
-  EEStore::init();                                          // initialize and load Turnout and Sensor definitions stored in EEPROM
+  EEStore::init();                                          // initialize and load Accessory (Turnout), Output, and Sensor definitions stored in EEPROM
 
   pinMode(A5,INPUT);                                       // if pin A5 is grounded upon start-up, print system configuration and halt
   digitalWrite(A5,HIGH);
   if(!digitalRead(A5))
     showConfiguration();
 
-  Serial.print("<iDCC++ BASE STATION FOR ARDUINO ");      // Print Status to Serial Line regardless of COMM_TYPE setting so use can open Serial Monitor and check configurtion 
+  Serial.print("<iDCC++ BASE STATION FOR ARDUINO ");      // Print Status to Serial Line regardless of COMM_TYPE setting so user can open Serial Monitor and check configurtion 
   Serial.print(ARDUINO_TYPE);
   Serial.print(" / ");
   Serial.print(MOTOR_SHIELD_NAME);
@@ -424,13 +424,13 @@ void setup(){
 
 #define DCC_SIGNAL(R,N) \
   if(R.currentBit==R.currentReg->activePacket->nBits){    /* IF no more bits in this DCC Packet */ \
-    R.currentBit=0;                                       /*   reset current bit pointer and determine which Register and Packet to process next--- */ \   
+    R.currentBit=0;                                       /*   reset current bit pointer and determine which Register and Packet to process next--- */ \
     if(R.nRepeat>0 && R.currentReg==R.reg){               /*   IF current Register is first Register AND should be repeated */ \
       R.nRepeat--;                                        /*     decrement repeat count; result is this same Packet will be repeated */ \
     } else if(R.nextReg!=NULL){                           /*   ELSE IF another Register has been updated */ \
       R.currentReg=R.nextReg;                             /*     update currentReg to nextReg */ \
       R.nextReg=NULL;                                     /*     reset nextReg to NULL */ \
-      R.tempPacket=R.currentReg->activePacket;            /*     flip active and update Packets */ \        
+      R.tempPacket=R.currentReg->activePacket;            /*     flip active and update Packets */ \
       R.currentReg->activePacket=R.currentReg->updatePacket; \
       R.currentReg->updatePacket=R.tempPacket; \
     } else{                                               /*   ELSE simply move to next Register */ \
@@ -446,8 +446,8 @@ void setup(){
   } else{                                                                              /* ELSE it is a ZERO */ \
     OCR ## N ## A=DCC_ZERO_BIT_TOTAL_DURATION_TIMER ## N;                              /*   set OCRA for timer N to full cycle duration of DCC ZERO bit */ \
     OCR ## N ## B=DCC_ZERO_BIT_PULSE_DURATION_TIMER ## N;                              /*   set OCRB for timer N to half cycle duration of DCC ZERO bit */ \
-  }                                                                                    /* END-ELSE */ \ 
-                                                                                       \ 
+  }                                                                                    /* END-ELSE */ \
+                                                                                       \
   R.currentBit++;                                         /* point to next bit in current Packet */  
   
 ///////////////////////////////////////////////////////////////////////////////
@@ -520,6 +520,8 @@ void showConfiguration(){
   Serial.print(EEStore::eeStore->data.nSensors);
   Serial.print("\n     OUTPUTS: ");
   Serial.print(EEStore::eeStore->data.nOutputs);
+  Serial.print("\n     CONSISTS: ");
+  Serial.print(EEStore::eeStore->data.nConsists);
   
   Serial.print("\n\nINTERFACE:    ");
   #if COMM_TYPE == 0
@@ -557,7 +559,3 @@ void showConfiguration(){
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
-
-
-
