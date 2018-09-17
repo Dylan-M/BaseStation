@@ -16,6 +16,7 @@ Addition to DCC++ BASE STATION for the Arduino
 #define POS_LEAD_LOCO       0
 #define POS_TRAIL_LOCO      1
 #define POS_OTHER_LOCO      2
+#define MIN_CONSIST_ADDRESS 1
 #define MAX_CONSIST_ADDRESS 127
 #define CONSIST_NONE        0
 

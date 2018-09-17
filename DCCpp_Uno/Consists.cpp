@@ -72,7 +72,10 @@ Consist *Consist::create(byte address, int leadLoco, int trailLoco, int locos[MA
   Consist *consist;
 
   // Validate that none of our requested engines are present in a consist
-  if (isInConsist(leadLoco) != CONSIST_NONE || isInConsist(trailLoco) != CONSIST_NONE) {
+  if (isInConsist(leadLoco) != CONSIST_NONE
+  || isInConsist(trailLoco) != CONSIST_NONE
+  || address < MIN_CONSIST_ADDRESS
+  || address > MAX_CONSIST_ADDRESS) {
     INTERFACE.print("<X>");
     return (consist);
   }
