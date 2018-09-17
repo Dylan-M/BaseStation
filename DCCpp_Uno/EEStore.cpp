@@ -37,7 +37,7 @@ void EEStore::init(){
   Turnout::load();    // load turnout definitions
   Sensor::load();     // load sensor definitions
   Output::load();     // load output definitions
-  Consist::load();   // load consist definitions
+  Consist::load();    // load consist definitions
   
 }
 

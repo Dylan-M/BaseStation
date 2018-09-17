@@ -51,7 +51,7 @@ Consisting Commands:
     Show all existing consists.
 
 Where:
-    ADDRESS is a valid consist address (1-128 to human, 0-127 to code)
+    ADDRESS is a valid consist address (1-127)
     LEAD_LOCO is the locomotive that is first in the consist
     TRAIL_LOCO is the locomotive that is last in the consist
     OTHER_LOCO1 .. OTHER_LOCON is an unspecified number of additional
