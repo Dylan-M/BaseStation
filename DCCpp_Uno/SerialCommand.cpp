@@ -454,7 +454,7 @@ void SerialCommand::parse(char *com){
     Serial.println("\nEntering Diagnostic Mode...");
     delay(1000);
 
-    #if defined(FUTUMOTO_SHIELD) && defined(ARDUINO_AVR_UNO) // UNO + FUTUMOTO Shield
+    #if defined(FUNDUMOTO_SHIELD) && defined(ARDUINO_AVR_UNO) // UNO + FUNDUMOTO Shield
 
       bitSet(TCCR2B,CS22);    // set Timer 2 prescale=256 - SLOWS NORMAL SPEED BY A FACTOR OF 4
       bitClear(TCCR2B,CS21);

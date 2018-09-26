@@ -51,7 +51,7 @@ Part of DCC++ BASE STATION for the Arduino
 #elif MOTOR_SHIELD_TYPE == 2
 
   #define MOTOR_SHIELD_NAME "FUNDUMOTO MOTOR SHIELD"
-  #define FUTUMOTO_SHIELD
+  #define FUNDUMOTO_SHIELD
 
   #define SIGNAL_ENABLE_PIN_MAIN 10
   #define SIGNAL_ENABLE_PIN_PROG 11
@@ -80,7 +80,7 @@ Part of DCC++ BASE STATION for the Arduino
 
   #define ARDUINO_TYPE    "UNO"
 
-  #ifdef FUTUMOTO_SHIELD // With an Uno and FUTUMOTO Shield we need to do some tricks
+  #ifdef FUNDUMOTO_SHIELD // With an Uno and FUNDUMOTO Shield we need to do some tricks
     #define DCC_SIGNAL_PIN_MAIN 3         // Ardunio Uno  - uses OC2B
   #else
     #define DCC_SIGNAL_PIN_MAIN 10        // Ardunio Uno  - uses OC1B

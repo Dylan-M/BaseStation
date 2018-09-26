@@ -272,8 +272,8 @@ void setup(){
   
   // Direction Pin for Motor Shield Channel A - MAIN OPERATIONS TRACK
 
-  // Need to use timer2 instead of timer1 when using the FUTUMOTO shield on an Uno
-  #if defined(FUTUMOTO_SHIELD) && defined(ARDUINO_AVR_UNO)
+  // Need to use timer2 instead of timer1 when using the FUNDUMOTO shield on an Uno
+  #if defined(FUNDUMOTO_SHIELD) && defined(ARDUINO_AVR_UNO)
     // Controlled by Arduino 8-bit TIMER 2 / OC2B Interrupt Pin
     // Values for 8-bit OCR2A and OCR2B registers calibrated for 1:64 prescale at 16 MHz clock frequency
     // Resulting waveforms are 200 microseconds for a ZERO bit and 116 microseconds for a ONE bit with as-close-as-possible to 50% duty cycle
@@ -338,8 +338,8 @@ void setup(){
 
   mainRegs.loadPacket(1,RegisterList::idlePacket,2,0);    // load idle packet into register 1    
 
-  // Need to use timer2 instead of timer1 when using the FUTUMOTO shield on an Uno
-  #if defined(FUTUMOTO_SHIELD) && defined(ARDUINO_AVR_UNO)
+  // Need to use timer2 instead of timer1 when using the FUNDUMOTO shield on an Uno
+  #if defined(FUNDUMOTO_SHIELD) && defined(ARDUINO_AVR_UNO)
     bitSet(TIMSK2,OCIE2B);    // enable interrupt vector for Timer 2 Output Compare B Match (OCR2B)
   #else
     bitSet(TIMSK1,OCIE1B);    // enable interrupt vector for Timer 1 Output Compare B Match (OCR1B)
@@ -492,7 +492,7 @@ void setup(){
 
 // NOW USE THE ABOVE MACRO TO CREATE THE CODE FOR EACH INTERRUPT
 
-#if defined(FUTUMOTO_SHIELD) && defined(ARDUINO_AVR_UNO)
+#if defined(FUNDUMOTO_SHIELD) && defined(ARDUINO_AVR_UNO)
 
 ISR(TIMER2_COMPB_vect){              // set interrupt service for OCR2B of TIMER-2 which flips direction bit of Motor Shield Channel A controlling Main Track
   DCC_SIGNAL(mainRegs,2)
