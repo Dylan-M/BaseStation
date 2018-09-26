@@ -453,10 +453,20 @@ void SerialCommand::parse(char *com){
 
     Serial.println("\nEntering Diagnostic Mode...");
     delay(1000);
-    
-    bitClear(TCCR1B,CS12);    // set Timer 1 prescale=8 - SLOWS NORMAL SPEED BY FACTOR OF 8
-    bitSet(TCCR1B,CS11);
-    bitClear(TCCR1B,CS10);
+
+    #if defined(FUTUMOTO_SHIELD) && defined(ARDUINO_AVR_UNO) // UNO + FUTUMOTO Shield
+
+      bitSet(TCCR2B,CS22);    // set Timer 2 prescale=256 - SLOWS NORMAL SPEED BY A FACTOR OF 4
+      bitClear(TCCR2B,CS21);
+      bitClear(TCCR2B,CS20);
+
+    #else
+
+      bitClear(TCCR1B,CS12);    // set Timer 1 prescale=8 - SLOWS NORMAL SPEED BY FACTOR OF 8
+      bitSet(TCCR1B,CS11);
+      bitClear(TCCR1B,CS10);
+
+    #endif
 
     #ifdef ARDUINO_AVR_UNO      // Configuration for UNO
 

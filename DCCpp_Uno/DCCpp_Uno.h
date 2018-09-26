@@ -19,40 +19,6 @@ Part of DCC++ BASE STATION for the Arduino
 #define VERSION "1.2.1+"
 
 /////////////////////////////////////////////////////////////////////////////////////
-// AUTO-SELECT ARDUINO BOARD
-/////////////////////////////////////////////////////////////////////////////////////
-
-#ifdef ARDUINO_AVR_MEGA                   // is using Mega 1280, define as Mega 2560 (pinouts and functionality are identical)
-  #define ARDUINO_AVR_MEGA2560
-#endif
-
-#if defined  ARDUINO_AVR_UNO
-
-  #define ARDUINO_TYPE    "UNO"
-
-  #define DCC_SIGNAL_PIN_MAIN 10          // Ardunio Uno  - uses OC1B
-  #define DCC_SIGNAL_PIN_PROG 5           // Arduino Uno  - uses OC0B
-
-  #if COMM_INTERFACE != 0                 // Serial was not selected
-
-    #error CANNOT COMPILE - DCC++ FOR THE UNO CAN ONLY USE SERIAL COMMUNICATION - PLEASE SELECT THIS IN THE CONFIG FILE
-
-  #endif
-
-#elif defined  ARDUINO_AVR_MEGA2560
-
-  #define ARDUINO_TYPE    "MEGA"
-
-  #define DCC_SIGNAL_PIN_MAIN 12          // Arduino Mega - uses OC1B
-  #define DCC_SIGNAL_PIN_PROG 2           // Arduino Mega - uses OC3B
-
-#else
-
-  #error CANNOT COMPILE - DCC++ ONLY WORKS WITH AN ARDUINO UNO OR AN ARDUINO MEGA 1280/2560
-
-#endif
-
-/////////////////////////////////////////////////////////////////////////////////////
 // SELECT MOTOR SHIELD
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -82,9 +48,61 @@ Part of DCC++ BASE STATION for the Arduino
   #define DIRECTION_MOTOR_CHANNEL_PIN_A 7
   #define DIRECTION_MOTOR_CHANNEL_PIN_B 8
 
+#elif MOTOR_SHIELD_TYPE == 2
+
+  #define MOTOR_SHIELD_NAME "FUNDUMOTO MOTOR SHIELD"
+  #define FUTUMOTO_SHIELD
+
+  #define SIGNAL_ENABLE_PIN_MAIN 10
+  #define SIGNAL_ENABLE_PIN_PROG 11
+
+  #define CURRENT_MONITOR_PIN_MAIN A0
+  #define CURRENT_MONITOR_PIN_PROG A1
+
+  #define DIRECTION_MOTOR_CHANNEL_PIN_A 12
+  #define DIRECTION_MOTOR_CHANNEL_PIN_B 13
+
 #else
 
   #error CANNOT COMPILE - PLEASE SELECT A PROPER MOTOR SHIELD TYPE
+
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////////
+// AUTO-SELECT ARDUINO BOARD
+/////////////////////////////////////////////////////////////////////////////////////
+
+#ifdef ARDUINO_AVR_MEGA                   // is using Mega 1280, define as Mega 2560 (pinouts and functionality are identical)
+  #define ARDUINO_AVR_MEGA2560
+#endif
+
+#if defined  ARDUINO_AVR_UNO
+
+  #define ARDUINO_TYPE    "UNO"
+
+  #ifdef FUTUMOTO_SHIELD // With an Uno and FUTUMOTO Shield we need to do some tricks
+    #define DCC_SIGNAL_PIN_MAIN 3         // Ardunio Uno  - uses OC2B
+  #else
+    #define DCC_SIGNAL_PIN_MAIN 10        // Ardunio Uno  - uses OC1B
+  #endif
+  #define DCC_SIGNAL_PIN_PROG 5           // Arduino Uno  - uses OC0B
+
+  #if COMM_INTERFACE != 0                 // Serial was not selected
+
+    #error CANNOT COMPILE - DCC++ FOR THE UNO CAN ONLY USE SERIAL COMMUNICATION - PLEASE SELECT THIS IN THE CONFIG FILE
+
+  #endif
+
+#elif defined  ARDUINO_AVR_MEGA2560
+
+  #define ARDUINO_TYPE    "MEGA"
+
+  #define DCC_SIGNAL_PIN_MAIN 12          // Arduino Mega - uses OC1B
+  #define DCC_SIGNAL_PIN_PROG 2           // Arduino Mega - uses OC3B
+
+#else
+
+  #error CANNOT COMPILE - DCC++ ONLY WORKS WITH AN ARDUINO UNO OR AN ARDUINO MEGA 1280/2560
 
 #endif
 
@@ -131,5 +149,3 @@ Part of DCC++ BASE STATION for the Arduino
 /////////////////////////////////////////////////////////////////////////////////////
 
 #endif
-
-

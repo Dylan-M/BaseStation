@@ -268,44 +268,82 @@ void setup(){
     Serial.print(">");
   #endif
   
-  // CONFIGURE TIMER_1 TO OUTPUT 50% DUTY CYCLE DCC SIGNALS ON OC1B INTERRUPT PINS
+  // CONFIGURE TIMER_1 or TIMER_2 TO OUTPUT 50% DUTY CYCLE DCC SIGNALS ON OC1B or OC2B INTERRUPT PINS
   
   // Direction Pin for Motor Shield Channel A - MAIN OPERATIONS TRACK
-  // Controlled by Arduino 16-bit TIMER 1 / OC1B Interrupt Pin
-  // Values for 16-bit OCR1A and OCR1B registers calibrated for 1:1 prescale at 16 MHz clock frequency
-  // Resulting waveforms are 200 microseconds for a ZERO bit and 116 microseconds for a ONE bit with exactly 50% duty cycle
 
-  #define DCC_ZERO_BIT_TOTAL_DURATION_TIMER1 3199
-  #define DCC_ZERO_BIT_PULSE_DURATION_TIMER1 1599
+  // Need to use timer2 instead of timer1 when using the FUTUMOTO shield on an Uno
+  #if defined(FUTUMOTO_SHIELD) && defined(ARDUINO_AVR_UNO)
+    // Controlled by Arduino 8-bit TIMER 2 / OC2B Interrupt Pin
+    // Values for 8-bit OCR2A and OCR2B registers calibrated for 1:64 prescale at 16 MHz clock frequency
+    // Resulting waveforms are 200 microseconds for a ZERO bit and 116 microseconds for a ONE bit with as-close-as-possible to 50% duty cycle
+  
+    #define DCC_ZERO_BIT_TOTAL_DURATION_TIMER2 49
+    #define DCC_ZERO_BIT_PULSE_DURATION_TIMER2 24
+  
+    #define DCC_ONE_BIT_TOTAL_DURATION_TIMER2 28
+    #define DCC_ONE_BIT_PULSE_DURATION_TIMER2 14
+  
+    pinMode(DIRECTION_MOTOR_CHANNEL_PIN_A,INPUT);      // ensure this pin is not active! Direction will be controlled by DCC SIGNAL instead (below)
+    digitalWrite(DIRECTION_MOTOR_CHANNEL_PIN_A,LOW);
+  
+    pinMode(DCC_SIGNAL_PIN_MAIN, OUTPUT);      // THIS ARDUINO OUPUT PIN MUST BE PHYSICALLY CONNECTED TO THE PIN FOR DIRECTION-A OF MOTOR CHANNEL-A
 
-  #define DCC_ONE_BIT_TOTAL_DURATION_TIMER1 1855
-  #define DCC_ONE_BIT_PULSE_DURATION_TIMER1 927
-
-  pinMode(DIRECTION_MOTOR_CHANNEL_PIN_A,INPUT);      // ensure this pin is not active! Direction will be controlled by DCC SIGNAL instead (below)
-  digitalWrite(DIRECTION_MOTOR_CHANNEL_PIN_A,LOW);
-
-  pinMode(DCC_SIGNAL_PIN_MAIN, OUTPUT);      // THIS ARDUINO OUPUT PIN MUST BE PHYSICALLY CONNECTED TO THE PIN FOR DIRECTION-A OF MOTOR CHANNEL-A
-
-  bitSet(TCCR1A,WGM10);     // set Timer 1 to FAST PWM, with TOP=OCR1A
-  bitSet(TCCR1A,WGM11);
-  bitSet(TCCR1B,WGM12);
-  bitSet(TCCR1B,WGM13);
-
-  bitSet(TCCR1A,COM1B1);    // set Timer 1, OC1B (pin 10/UNO, pin 12/MEGA) to inverting toggle (actual direction is arbitrary)
-  bitSet(TCCR1A,COM1B0);
-
-  bitClear(TCCR1B,CS12);    // set Timer 1 prescale=1
-  bitClear(TCCR1B,CS11);
-  bitSet(TCCR1B,CS10);
+    bitSet(TCCR2A,WGM20);     // set Timer 2 to FAST PWM, with TOP=OCR2A
+    bitSet(TCCR2A,WGM21);
+    bitSet(TCCR2B,WGM22);
+  
+    bitSet(TCCR2A,COM2B1);    // set Timer 2, OC2B (pin 3) to inverting toggle (actual direction is arbitrary)
+    bitSet(TCCR2A,COM2B0);
+  
+    bitClear(TCCR2B,CS22);    // set Timer 2 prescale=64
+    bitSet(TCCR2B,CS21);
+    bitSet(TCCR2B,CS20);
+      
+    OCR2A=DCC_ONE_BIT_TOTAL_DURATION_TIMER2;
+    OCR2B=DCC_ONE_BIT_PULSE_DURATION_TIMER2;
+  #else
+    // Controlled by Arduino 16-bit TIMER 1 / OC1B Interrupt Pin
+    // Values for 16-bit OCR1A and OCR1B registers calibrated for 1:1 prescale at 16 MHz clock frequency
+    // Resulting waveforms are 200 microseconds for a ZERO bit and 116 microseconds for a ONE bit with exactly 50% duty cycle
+  
+    #define DCC_ZERO_BIT_TOTAL_DURATION_TIMER1 3199
+    #define DCC_ZERO_BIT_PULSE_DURATION_TIMER1 1599
+  
+    #define DCC_ONE_BIT_TOTAL_DURATION_TIMER1 1855
+    #define DCC_ONE_BIT_PULSE_DURATION_TIMER1 927
+  
+    pinMode(DIRECTION_MOTOR_CHANNEL_PIN_A,INPUT);      // ensure this pin is not active! Direction will be controlled by DCC SIGNAL instead (below)
+    digitalWrite(DIRECTION_MOTOR_CHANNEL_PIN_A,LOW);
+  
+    pinMode(DCC_SIGNAL_PIN_MAIN, OUTPUT);      // THIS ARDUINO OUPUT PIN MUST BE PHYSICALLY CONNECTED TO THE PIN FOR DIRECTION-A OF MOTOR CHANNEL-A
     
-  OCR1A=DCC_ONE_BIT_TOTAL_DURATION_TIMER1;
-  OCR1B=DCC_ONE_BIT_PULSE_DURATION_TIMER1;
+    bitSet(TCCR1A,WGM10);     // set Timer 1 to FAST PWM, with TOP=OCR1A
+    bitSet(TCCR1A,WGM11);
+    bitSet(TCCR1B,WGM12);
+    bitSet(TCCR1B,WGM13);
+  
+    bitSet(TCCR1A,COM1B1);    // set Timer 1, OC1B (pin 10/UNO, pin 12/MEGA) to inverting toggle (actual direction is arbitrary)
+    bitSet(TCCR1A,COM1B0);
+  
+    bitClear(TCCR1B,CS12);    // set Timer 1 prescale=1
+    bitClear(TCCR1B,CS11);
+    bitSet(TCCR1B,CS10);
+      
+    OCR1A=DCC_ONE_BIT_TOTAL_DURATION_TIMER1;
+    OCR1B=DCC_ONE_BIT_PULSE_DURATION_TIMER1;
+  #endif
   
   pinMode(SIGNAL_ENABLE_PIN_MAIN,OUTPUT);   // master enable for motor channel A
 
   mainRegs.loadPacket(1,RegisterList::idlePacket,2,0);    // load idle packet into register 1    
-      
-  bitSet(TIMSK1,OCIE1B);    // enable interrupt vector for Timer 1 Output Compare B Match (OCR1B)    
+
+  // Need to use timer2 instead of timer1 when using the FUTUMOTO shield on an Uno
+  #if defined(FUTUMOTO_SHIELD) && defined(ARDUINO_AVR_UNO)
+    bitSet(TIMSK2,OCIE2B);    // enable interrupt vector for Timer 2 Output Compare B Match (OCR2B)
+  #else
+    bitSet(TIMSK1,OCIE1B);    // enable interrupt vector for Timer 1 Output Compare B Match (OCR1B)
+  #endif
 
   // CONFIGURE EITHER TIMER_0 (UNO) OR TIMER_3 (MEGA) TO OUTPUT 50% DUTY CYCLE DCC SIGNALS ON OC0B (UNO) OR OC3B (MEGA) INTERRUPT PINS
   
@@ -454,9 +492,19 @@ void setup(){
 
 // NOW USE THE ABOVE MACRO TO CREATE THE CODE FOR EACH INTERRUPT
 
+#if defined(FUTUMOTO_SHIELD) && defined(ARDUINO_AVR_UNO)
+
+ISR(TIMER2_COMPB_vect){              // set interrupt service for OCR2B of TIMER-2 which flips direction bit of Motor Shield Channel A controlling Main Track
+  DCC_SIGNAL(mainRegs,2)
+}
+
+#else
+
 ISR(TIMER1_COMPB_vect){              // set interrupt service for OCR1B of TIMER-1 which flips direction bit of Motor Shield Channel A controlling Main Track
   DCC_SIGNAL(mainRegs,1)
 }
+
+#endif
 
 #ifdef ARDUINO_AVR_UNO      // Configuration for UNO
 
