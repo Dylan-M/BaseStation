@@ -229,9 +229,9 @@ void setup(){
 
   EEStore::init();                                          // initialize and load Accessory (Turnout), Output, and Sensor definitions stored in EEPROM
 
-  pinMode(A5,INPUT);                                       // if pin A5 is grounded upon start-up, print system configuration and halt
-  digitalWrite(A5,HIGH);
-  if(!digitalRead(A5))
+  pinMode(SHOW_CONFIG_PIN,INPUT);                                       // if pin A5 is grounded upon start-up, print system configuration and halt
+  digitalWrite(SHOW_CONFIG_PIN,HIGH);
+  if(!digitalRead(SHOW_CONFIG_PIN))
     showConfiguration();
 
   Serial.print("<iDCC++ BASE STATION FOR ARDUINO ");      // Print Status to Serial Line regardless of COMM_TYPE setting so user can open Serial Monitor and check configurtion 
